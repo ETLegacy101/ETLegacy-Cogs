@@ -1,0 +1,9 @@
+
+{
+    "AUTHOR" : "ETLegacy",
+    "SHORT" : "Joinmsg",
+    "DESCRIPTION" : "Joinmsg",
+    "DISABLED" : false,
+    "NAME" : "Joinmsg",
+    "INSTALL_MSG" : "Thanks for installing my Joinmsg cog!"
+}

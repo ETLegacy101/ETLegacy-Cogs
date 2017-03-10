@@ -1,0 +1,9 @@
+
+{
+    "AUTHOR" : "ETLegacy",
+    "SHORT" : "Stats",
+    "DESCRIPTION" : "Stats",
+    "DISABLED" : false,
+    "NAME" : "Stats",
+    "INSTALL_MSG" : "Thanks for installing my Stats cog!"
+}

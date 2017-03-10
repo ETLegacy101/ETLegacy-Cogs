@@ -1,0 +1,9 @@
+
+{
+    "AUTHOR" : "ETLegacy",
+    "SHORT" : "ping",
+    "DESCRIPTION" : "ping",
+    "DISABLED" : false,
+    "NAME" : "ping",
+    "INSTALL_MSG" : "Thanks for installing my ping cog!"
+}

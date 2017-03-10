@@ -1,0 +1,9 @@
+
+{
+    "AUTHOR" : "ETLegacy",
+    "SHORT" : "Weather",
+    "DESCRIPTION" : "Weather",
+    "DISABLED" : false,
+    "NAME" : "Weather",
+    "INSTALL_MSG" : "Thanks for installing my Weather cog!"
+}

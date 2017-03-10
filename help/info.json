@@ -1,0 +1,9 @@
+
+{
+    "AUTHOR" : "ETLegacy",
+    "SHORT" : "Help",
+    "DESCRIPTION" : "Help",
+    "DISABLED" : false,
+    "NAME" : "Help",
+    "INSTALL_MSG" : "Thanks for installing my Help cog!"
+}
