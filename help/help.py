@@ -108,7 +108,7 @@ class Help:
         destination = channel
         await self.bot.send_message(destination, embed=info)
 		
-	@commands.command(pass_context=True)
+    @commands.command(pass_context=True)
     async def fun(self, ctx):
         """Sends fun help message."""
         channel = ctx.message.channel
