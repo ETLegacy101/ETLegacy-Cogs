@@ -1,3 +1,1 @@
-"# ETLegacy-Cogs" 
-"# ETLegacy-Cogs" 
-"# ETLegacy" 
+ETLegacy Bot Cogs!
