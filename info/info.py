@@ -17,7 +17,7 @@ class Info:
 
     def fetch_joined_at(self, user, server):
         """Just a special case for someone special :^)"""
-        if user.id == "96130341705637888" and server.id == "133049272517001216":
+        if user.id == "153286414212005888" and server.id == "188571987835092992":
             return datetime.datetime(2016, 1, 10, 6, 8, 4, 443000)
         else:
             return user.joined_at
@@ -71,29 +71,29 @@ class Info:
     
     @commands.command(pass_context=True)
     async def info(self, ctx):
-        """Shows information on Brooklyn."""
+        """Shows information on ETLegacy."""
         prefix = ctx.prefix
-        owner = "Yσυηg Sιηαтяα™#5484"
+        owner = "! ETLegacy™#2288"
         servers = len(self.bot.servers)
         members = len([e.name for e in self.bot.get_all_members()])
-        e = discord.Embed(description="Brooklyn - A multi function Discord bot with music, moderation, and utility features.", colour=discord.Colour.blue())
+        e = discord.Embed(description="ETLegacy - A multi function Discord bot with music, moderation, and utility features.", colour=discord.Colour.red())
         e.add_field(name="Live Information:", value="Owner: {}\nPrefix: {}\nServers: {}\nTotal Users: {}\nTotal Commands: {}\nTotal Modules: {}\nApi Version: {}".format(owner, prefix, servers, members, len(self.bot.commands), len(self.bot.cogs), discord.__version__))
-        e.add_field(name="Links:", value="[Support Server.](https://discord.gg/ETqpvsa)\n[Invite url.](https://discordapp.com/oauth2/authorize?client_id=226132382846156800&permissions=-1&scope=bot)")
-        e.set_author(name="Brooklyn#6591", icon_url="https://images-ext-1.discordapp.net/.eJwFwQsKwyAMANC7eAA_iU3TwthZYhRW2FZRu8FK7773TnO0p1nNY4zaV-c0v23euu4tS61W95eTjwxp3QFQQEAGjhQmYu8dKsSFOSoxQ8ZJEMscUoLZL5FI7bekeu_br9yCh2iuP44VINs.ZtSGfr53jRG7PUbMI4gaUeWw0l0?width=250&height=250")
+        e.add_field(name="Links:", value="[Support Server.](https://discord.gg/dVEkSh4)\n[Invite url.](https://discordapp.com/oauth2/authorize?client_id=248032345603571712&scope=bot&permissions=-1)")
+        e.set_author(name="ETLegacy#1697", icon_url="https://images-ext-1.discordapp.net/.eJwFwQsOwiAMANC7cABa2k5gifEs5bO4RB0B1ETj3X3va579ZlZznbONFSCXhy37yEcv2prNxx30pVP7AJKATCzLCXnxzjsCr0TIZdMUa0CssnFMLMlhTDH4bN81tcvYP_XskMT8_qcxIYk._YrCsmQnelUli8Exk3yukS5BDcc?width=250&height=250")
         e.add_field(name="Changelog:", value="""**Added:**
 `1)` b!serverstats | Shows stats on users status and servercount.
 `2)` b!banlist | Shows bans  in the server.
 `3)` b!cookie | Give a user a cookie. (Requested by user.)""")
-        e.set_thumbnail(url="https://images-ext-1.discordapp.net/.eJwFwQsKwyAMANC7eAA_iU3TwthZYhRW2FZRu8FK7773TnO0p1nNY4zaV-c0v23euu4tS61W95eTjwxp3QFQQEAGjhQmYu8dKsSFOSoxQ8ZJEMscUoLZL5FI7bekeu_br9yCh2iuP44VINs.ZtSGfr53jRG7PUbMI4gaUeWw0l0?width=250&height=250")
+        e.set_thumbnail(url="https://images-ext-1.discordapp.net/.eJwFwQsOwiAMANC7cABa2k5gifEs5bO4RB0B1ETj3X3va579ZlZznbONFSCXhy37yEcv2prNxx30pVP7AJKATCzLCXnxzjsCr0TIZdMUa0CssnFMLMlhTDH4bN81tcvYP_XskMT8_qcxIYk._YrCsmQnelUli8Exk3yukS5BDcc?width=250&height=250")
         try:
             await self.bot.say(embed=e)
         except discord.HTTPException:
             prefix = ctx.prefix
-            owner = "Yσυηg Sιηαтяα™#5484"
+            owner = "! ETLegacy™#2288"
             servers = len(self.bot.servers)
             users = len([e.name for e in self.bot.get_all_members()])
             channels = len([e.name for e in self.bot.get_all_channels()])
-            data = "**Brooklyn - A multi function Discord bot with music, moderation, and utility features.**\n\n"
+            data = "**ETLegacy - A multi function Discord bot with music, moderation, and utility features.**\n\n"
             data += "**Live Information:**\n"
             data += "Owner: {}\n".format(owner)
             data += "Prefix: {}\n".format(prefix)
@@ -103,37 +103,13 @@ class Info:
             data += "Total Commands: {}\n".format(len(self.bot.commands))
             data += "Total Modules: {}\n\n".format(len(self.bot.cogs))
             data += "**Links:**\n"
-            data += "Official Server: https://discord.gg/ETqpvsa\n"
-            data += "Invite Url: https://discordapp.com/oauth2/authorize?client_id=226132382846156800&permissions=-1&scope=bot\n\n"
+            data += "Official Server: https://discord.gg/dVEkSh4\n"
+            data += "Invite Url: https://discordapp.com/oauth2/authorize?client_id=248032345603571712&scope=bot&permissions=-1\n\n"
             data += "**Changelog:**\n\n"
             data += "**Added:**\n"
-            data += "`1)` b!banlist | Shows bans for the server.\n"
-            data += "`2)` b!serverstats | Shows stats on users status and servercount.\n"
+            data += "`1)` *banlist | Shows bans for the server.\n"
+            data += "`2)` *serverstats | Shows stats on users status and servercount.\n"
             await self.bot.say(data)
-
-    @commands.command(pass_context=True)
-    async def ping(self, ctx):
-        """Pong."""
-        msg = await self.bot.say(embed=discord.Embed(description="Pinging to server.........", colour=discord.Colour.blue()))
-        time = (msg.timestamp - ctx.message.timestamp).total_seconds() * 1000
-        await self.bot.edit_message(msg, embed=discord.Embed(description='Pong: {}ms :ping_pong:'.format(round(time)), colour=discord.Colour.blue()))
-
-    @commands.command(pass_context=True)
-    async def pingt(self, ctx):
-        await self.bot.say("Pinging to server...")
-        await asyncio.sleep(0.9)
-        await self.bot.say("Diving this by this.....")
-        await asyncio.sleep(0.9)
-        await self.bot.say("Alight now we need to times this by this....")
-        await asyncio.sleep(0.9)
-        await self.bot.say("Now we need to add this and then subtract by 2...")
-        await asyncio.sleep(0.9)
-        await self.bot.say("Checking calculations...")
-        await asyncio.sleep(0.9)
-        await self.bot.say("Editing a message....")
-        msg = await self.bot.say("........")
-        time = (msg.timestamp - ctx.message.timestamp).total_seconds() * 10
-        await self.bot.edit_message(msg, 'Acording to my calculations it took {}ms to ping to the server.'.format(round(time)))
 
     @commands.command()
     async def join(self):
@@ -160,7 +136,7 @@ class Info:
         await self.bot.type()
         t2 = time.perf_counter()
         data = discord.Embed(description="Showing stats for {}.".format(self.bot.user.name), colour=discord.Colour.red())
-        data.add_field(name="Owner", value="Yσυηg Sιηαтяα™#5484\n146040787891781632")
+        data.add_field(name="Owner", value="! ETLegacy™#2288\n146040787891781632")
         data.add_field(name="Ping", value="{}ms".format(round((t2-t1)*1000)))
         data.add_field(name="Servers", value=len(self.bot.servers))
         data.add_field(name="Api version", value=discord.__version__)
@@ -456,87 +432,7 @@ class Info:
         data.set_author(name="Avatar for "+user.name, icon_url=user.avatar_url)
         data.set_footer(text=datetime.datetime.now().strftime("%A, %B %-d %Y at %-I:%M%p").replace("PM", "pm").replace("AM", "am"))
         await self.bot.say(embed=data)
-
-    @commands.command(pass_context=True)
-    async def mods(self, ctx):
-        """Shows mods in the server."""
-        colour = "".join([random.choice('0123456789ABCDEF') for x in range(6)])
-        colour = int(colour, 16)
-        server = ctx.message.server
-        one = [e.mention for e in server.members if e.permissions_in(ctx.message.channel).manage_messages and not e.bot and e.status == discord.Status.online]
-        two = [e.mention for e in server.members if e.permissions_in(ctx.message.channel).manage_messages and not e.bot and e.status == discord.Status.idle]
-        three = [e.mention for e in server.members if e.permissions_in(ctx.message.channel).manage_messages and not e.bot and e.status == discord.Status.dnd]
-        four = [e.mention for e in server.members if e.permissions_in(ctx.message.channel).manage_messages and not e.bot and e.status == discord.Status.offline]
-        embed = discord.Embed(description="Listing mods for this server.", colour=discord.Colour(value=colour))
-        if one:
-            embed.add_field(name="Online", value=":green_heart: {0}".format((" \n:green_heart: ".join(one)).replace("`", "")), inline=False)
-        else:
-            embed.add_field(name="Offline", value=":green_heart: None", inline=False)
-        if two:
-            embed.add_field(name="Idle", value=":yellow_heart: {0}".format((" \n:yellow_heart: ".join(two)).replace("`", "")), inline=False)
-        else:
-            embed.add_field(name="Idle", value=":yellow_heart: None", inline=False)
-        if three:
-            embed.add_field(name="Dnd", value=":heart: {0}".format((" \n:heart: ".join(three)).replace("`", "")), inline=False)
-        else:
-            embed.add_field(name="Dnd", value=":heart: None", inline=False)
-        if four:
-            embed.add_field(name="Offline", value=":black_heart: {0}".format((" \n:black_heart: ".join(four)).replace("`", "")), inline=False)
-        else:
-            embed.add_field(name="Offline", value=":black_heart: None", inline=False)
-        if server.icon_url:
-            embed.set_author(name=server.name, url=server.icon_url)
-            embed.set_thumbnail(url=server.icon_url)
-        else:
-            embed.set_author(name=server.name)
-        await self.bot.say(embed=embed)
-
-    @commands.command(pass_context=True)
-    async def admins(self, ctx):
-        """Shows mods in the server."""
-        colour = "".join([random.choice('0123456789ABCDEF') for x in range(6)])
-        colour = int(colour, 16)
-        server = ctx.message.server
-        one = [e.mention for e in server.members if e.permissions_in(ctx.message.channel).administrator and not e.bot and e.status == discord.Status.online]
-        two = [e.mention for e in server.members if e.permissions_in(ctx.message.channel).administrator and not e.bot and e.status == discord.Status.idle]
-        three = [e.mention for e in server.members if e.permissions_in(ctx.message.channel).administrator and not e.bot and e.status == discord.Status.dnd]
-        four = [e.mention for e in server.members if e.permissions_in(ctx.message.channel).administrator and not e.bot and e.status == discord.Status.offline]
-        embed = discord.Embed(description="Listing admins for this server.", colour=discord.Colour(value=colour))
-        if one:
-            embed.add_field(name="Online", value=":green_heart: {0}".format((" \n:green_heart: ".join(one)).replace("`", "")), inline=False)
-        else:
-            embed.add_field(name="Offline", value=":green_heart: None", inline=False)
-        if two:
-            embed.add_field(name="Idle", value=":yellow_heart: {0}".format((" \n:yellow_heart: ".join(two)).replace("`", "")), inline=False)
-        else:
-            embed.add_field(name="Idle", value=":yellow_heart: None", inline=False)
-        if three:
-            embed.add_field(name="Dnd", value=":heart: {0}".format((" \n:heart: ".join(three)).replace("`", "")), inline=False)
-        else:
-            embed.add_field(name="Dnd", value=":heart: None", inline=False)
-        if four:
-            embed.add_field(name="Offline", value=":black_heart: {0}".format((" \n:black_heart: ".join(four)).replace("`", "")), inline=False)
-        else:
-            embed.add_field(name="Offline", value=":black_heart: None", inline=False)
-        if server.icon_url:
-            embed.set_author(name=server.name, url=server.icon_url)
-            embed.set_thumbnail(url=server.icon_url)
-        else:
-            embed.set_author(name=server.name)
-        await self.bot.say(embed=embed)
-
-    @commands.command(pass_context=True)
-    async def utime(self, ctx):
-        """Shows how long the bot has been online."""
-        seconds = time.time() - starttime
-        m, s = divmod(seconds, 60)
-        h, m = divmod(m, 60)
-        d, h = divmod(h, 24)
-        w, d = divmod(d, 7)
-        await self.bot.say("Brooklyn has been up for %d Weeks," % (w) + " %d Days," % (d) + " %d Hours,"
-                                   % (
-                h) + " %d Minutes," % (m) + " and %d Seconds!" % (s))
-
+	
     @commands.command(pass_context=True)
     async def roleid(self, ctx, rolename):
         """Gives the id of a role, must use quotes."""
