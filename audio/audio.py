@@ -2242,5 +2242,3 @@ def setup(bot):
     bot.loop.create_task(n.disconnect_timer())
     bot.loop.create_task(n.reload_monitor())
     bot.loop.create_task(n.cache_scheduler())
-Contact GitHub API Training Shop Blog About
-© 2017 GitHub, Inc. Terms Privacy Security Status Help
