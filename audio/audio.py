@@ -1,3 +1,21 @@
+Skip to content
+This repository
+Search
+Pull requests
+Issues
+Gist
+ @XxxETLegacyXxx
+ Sign out
+ Watch 0
+  Star 0
+ Fork 3 JonnyBoy2000/BrooklynCogs
+ Code  Issues 0  Pull requests 0  Projects 0  Wiki  Pulse  Graphs
+Branch: master Find file Copy pathBrooklynCogs/audio6/audio6.py
+b929215  14 days ago
+@JonnyBoy2000 JonnyBoy2000 Update audio6.py
+1 contributor
+RawBlameHistory     
+2247 lines (1864 sloc)  81.6 KB
 import discord
 from discord.ext import commands
 import threading
@@ -2242,3 +2260,5 @@ def setup(bot):
     bot.loop.create_task(n.disconnect_timer())
     bot.loop.create_task(n.reload_monitor())
     bot.loop.create_task(n.cache_scheduler())
+Contact GitHub API Training Shop Blog About
+© 2017 GitHub, Inc. Terms Privacy Security Status Help
