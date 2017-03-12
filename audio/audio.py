@@ -6,7 +6,6 @@ from random import shuffle, choice
 from cogs.utils.dataIO import dataIO
 from cogs.utils import checks
 from cogs.utils.chat_formatting import pagify
-from urllib.parse import urlparse
 from __main__ import send_cmd_help, settings
 from json import JSONDecodeError
 import re
@@ -14,6 +13,7 @@ import logging
 import collections
 import copy
 import asyncio
+import random
 import math
 import time
 import inspect
@@ -43,14 +43,15 @@ youtube_dl_options = {
     'source_address': '0.0.0.0',
     'format': 'bestaudio/best',
     'extractaudio': True,
-    'audioformat': "mp3",
-    'outtmpl': '%(id)s',
+    'audioformat': 'mp3',
+    'outtmpl': '%(extractor)s-%(id)s-%(title)s',
     'noplaylist': True,
     'nocheckcertificate': True,
     'ignoreerrors': True,
+    'logtostderr': True,
     'quiet': True,
     'no_warnings': True,
-    'outtmpl': "data/audio/cache/%(id)s",
+    'outtmpl': 'data/audio/cache/%(extractor)s-%(id)s-%(title)s',#    'outtmpl': '%(id)s',
     'default_search': 'auto'
 }
 
@@ -157,45 +158,8 @@ class Playlist:
                "link": self.url}
         return ret
 
-    def is_author(self, user):
-        """checks if the user is the author of this playlist
-        Returns True/False"""
-        return user.id == self.author
-
-    def can_edit(self, user):
-        """right now checks if user is mod or higher including server owner
-        global playlists are uneditable atm
-        dev notes:
-        should probably be defined elsewhere later or be dynamic"""
-
-        # I don't know how global playlists are handled.
-        # Not sure if the framework is there for them to be editable.
-        # Don't know how they are handled by Playlist
-        # Don't know how they are handled by Audio
-        # so let's make sure it's not global at all.
-        if self.main_class._playlist_exists_global(self.name):
-            return False
-
-        admin_role = settings.get_server_admin(self.server)
-        mod_role = settings.get_server_mod(self.server)
-
-        is_playlist_author = self.is_author(user)
-        is_bot_owner = user.id == settings.owner
-        is_server_owner = self.server.owner.id == self.author
-        is_admin = discord.utils.get(user.roles, name=admin_role) is not None
-        is_mod = discord.utils.get(user.roles, name=mod_role) is not None
-
-        return any((is_playlist_author,
-                    is_bot_owner,
-                    is_server_owner,
-                    is_admin,
-                    is_mod))
-
-
-    # def __del__() ?
-
     def append_song(self, author, url):
-        if not self.can_edit(author):
+        if author.id != self.author:
             raise UnauthorizedSave
         elif not self.main_class._valid_playable_url(url):
             raise InvalidURL
@@ -214,6 +178,11 @@ class Playlist:
             return self.server.id
         else:
             return None
+
+    @property
+    def progress(self):
+        if self._current_player:
+            return round(self._current_player.buff.frame_count * 0.02)
 
 
 class Downloader(threading.Thread):
@@ -242,14 +211,13 @@ class Downloader(threading.Thread):
 
     def download(self):
         self.duration_check()
-
-        if not os.path.isfile('data/audio/cache' + self.song.id):
+        #%(extractor)s-%(id)s-%(title)s.%(ext)s
+        if not os.path.isfile('data/audio/cache/{0.extractor}-{0.id}-{0.title}'.format(self.song)):
             video = self._yt.extract_info(self.url)
             self.song = Song(**video)
 
     def duration_check(self):
-        log.debug("duration {} for songid {}".format(self.song.duration,
-                                                     self.song.id))
+        log.debug("duration {} for songid {}".format(self.song.duration, self.song.id))
         if self.max_duration and self.song.duration > self.max_duration:
             log.debug("songid {} too long".format(self.song.id))
             raise MaximumLength("songid {} has duration {} > {}".format(
@@ -259,16 +227,14 @@ class Downloader(threading.Thread):
         if self._yt is None:
             self._yt = youtube_dl.YoutubeDL(youtube_dl_options)
         if "[SEARCH:]" not in self.url:
-            video = self._yt.extract_info(self.url, download=False,
-                                          process=False)
+            video = self._yt.extract_info(self.url, download=False, process=False)
         else:
             self.url = self.url[9:]
             yt_id = self._yt.extract_info(
                 self.url, download=False)["entries"][0]["id"]
             # Should handle errors here ^
             self.url = "https://youtube.com/watch?v={}".format(yt_id)
-            video = self._yt.extract_info(self.url, download=False,
-                                          process=False)
+            video = self._yt.extract_info(self.url, download=False, process=False)
 
         self.song = Song(**video)
 
@@ -289,8 +255,6 @@ class Audio:
 
         self.skip_votes = {}
 
-        self.connect_timers = {}
-
         if player == "ffmpeg":
             self.settings["AVCONV"] = False
         elif player == "avconv":
@@ -305,20 +269,28 @@ class Audio:
         await self.bot.change_presence(status=status, game=game)
         log.debug('Bot status changed to song title: ' + song.title)
 
-    def _add_to_queue(self, server, url):
-        if server.id not in self.queue:
-            self._setup_queue(server)
+    def _extend_to_temp_queue(self, server, url):
+        if server.id not in self.queue: self._setup_queue(server)
+        self.queue[server.id]["TEMP_QUEUE"].extend(url)
+
+    def _extend_to_queue(self, server, url, author:None):
+        if server.id not in self.queue: self._setup_queue(server)
+        self.queue[server.id]["QUEUE"].extend(url)
+        self.queue[server.id]["AUTHORID"].extend(author.id)
+
+    def _add_to_queue(self, server, url, author:None):
+        if server.id not in self.queue: self._setup_queue(server)
         self.queue[server.id]["QUEUE"].append(url)
+        self.queue[server.id]["AUTHORID"].append(author.id)
 
     def _add_to_temp_queue(self, server, url):
-        if server.id not in self.queue:
-            self._setup_queue(server)
+        if server.id not in self.queue: self._setup_queue(server)
         self.queue[server.id]["TEMP_QUEUE"].append(url)
 
-    def _addleft_to_queue(self, server, url):
-        if server.id not in self.queue:
-            self._setup_queue()
+    def _addleft_to_queue(self, server, url, author:None):
+        if server.id not in self.queue: self._setup_queue()
         self.queue[server.id]["QUEUE"].appendleft(url)
+        self.queue[server.id]["AUTHORID"].appendleft(author.id)
 
     def _cache_desired_files(self):
         filelist = []
@@ -362,10 +334,10 @@ class Audio:
         return False
 
     def _clear_queue(self, server):
-        if server.id not in self.queue:
-            return
+        if server.id not in self.queue: return
         self.queue[server.id]["QUEUE"] = deque()
         self.queue[server.id]["TEMP_QUEUE"] = deque()
+        self.queue[server.id]["AUTHORID"] = deque()
 
     async def _create_ffmpeg_player(self, server, filename, local=False):
         """This function will guarantee we have a valid voice client,
@@ -481,8 +453,7 @@ class Audio:
                 next_dl.duration_check()
             except MaximumLength:
                 return
-            self.downloaders[server.id] = Downloader(next_dl.url, max_length,
-                                                     download=True)
+            self.downloaders[server.id] = Downloader(next_dl.url, max_length, download=True)
             self.downloaders[server.id].start()
 
     def _dump_cache(self, ignore_desired=False):
@@ -606,8 +577,7 @@ class Audio:
         cache_location = os.path.join(self.cache_path, song.id)
         if not os.path.exists(cache_location):
             log.debug("cache miss on song id {}".format(song.id))
-            self.downloaders[server.id] = Downloader(url, max_length,
-                                                     download=True)
+            self.downloaders[server.id] = Downloader(url, max_length, download=True)
             self.downloaders[server.id].start()
 
             while self.downloaders[server.id].is_alive():
@@ -627,21 +597,13 @@ class Audio:
 
     async def _join_voice_channel(self, channel):
         server = channel.server
-        connect_time = self.connect_timers.get(server.id, 0)
-        if time.time() < connect_time:
-            diff = int(connect_time - time.time())
-            raise ConnectTimeout("You are on connect cooldown for another {}"
-                                 " seconds.".format(diff))
         if server.id in self.queue:
             self.queue[server.id]["VOICE_CHANNEL_ID"] = channel.id
         try:
-            await asyncio.wait_for(self.bot.join_voice_channel(channel),
-                                   timeout=5, loop=self.bot.loop)
+            await self.bot.join_voice_channel(channel)
         except asyncio.futures.TimeoutError as e:
             log.exception(e)
-            self.connect_timers[server.id] = time.time() + 300
-            raise ConnectTimeout("We timed out connecting to a voice channel,"
-                                 " please try again in 10 minutes.")
+            raise ConnectTimeout("We timed out connecting to a voice channel")
 
     def _list_local_playlists(self):
         ret = []
@@ -734,12 +696,6 @@ class Audio:
             return True
         return False
 
-    def _match_any_url(self, url):
-        url = urlparse(url)
-        if url.scheme and url.netloc and url.path:
-            return True
-        return False
-
     # TODO: _next_songs_in_queue
 
     async def _parse_playlist(self, url):
@@ -815,8 +771,7 @@ class Audio:
             except FileNotFoundError:
                 raise
 
-        voice_client = await self._create_ffmpeg_player(server, song.id,
-                                                        local=local)
+        voice_client = await self._create_ffmpeg_player(server, '{0.extractor}-{0.id}-{0.title}'.format(song), local=local)
         # That ^ creates the audio_player property
 
         voice_client.audio_player.start()
@@ -922,6 +877,10 @@ class Audio:
 
     def _shuffle_queue(self, server):
         shuffle(self.queue[server.id]["QUEUE"])
+        r = random.random()            # randomly generating a real in [0,1)
+        random.shuffle(self.queue[server.id]["QUEUE"], lambda : r)  # lambda : r is an unary function which returns r
+        random.shuffle(self.queue[server.id]["AUTHORID"], lambda : r)  # using the same function as used in prev line so that shuffling order is same
+
 
     def _shuffle_temp_queue(self, server):
         shuffle(self.queue[server.id]["TEMP_QUEUE"])
@@ -985,10 +944,6 @@ class Audio:
             return
 
         del self.downloaders[server.id]
-        
-    def _extend_to_queue(self, server, url, author:None):
-        if server.id not in self.queue: self._setup_queue(server)
-        self.queue[server.id]["QUEUE"].extend(url)
 
     def _stop_player(self, server):
         if not self.voice_connected(server):
@@ -1032,7 +987,7 @@ class Audio:
             return True
         return False
 
-    @commands.group(pass_context=True)
+    @commands.group(pass_context=True, hidden=True)
     async def audioset(self, ctx):
         """Audio settings."""
         if ctx.invoked_subcommand is None:
@@ -1084,7 +1039,7 @@ class Audio:
         await self.bot.say("Maximum length is now {} seconds.".format(length))
         self.save_settings()
 
-    @audioset.command(name="player")
+    @audioset.command(name="player", hidden=True)
     @checks.is_owner()
     async def audioset_player(self):
         """Toggles between Ffmpeg and Avconv"""
@@ -1095,7 +1050,7 @@ class Audio:
             await self.bot.say("Player toggled. You're now using ffmpeg.")
         self.save_settings()
 
-    @audioset.command(name="status")
+    @audioset.command(name="status", hidden=True)
     @checks.is_owner()  # cause effect is cross-server
     async def audioset_status(self):
         """Enables/disables songs' titles as status"""
@@ -1111,8 +1066,8 @@ class Audio:
                                " status")
         self.save_settings()
 
-    @commands.command(pass_context=True, no_pm=True)
-    async def volume(self, ctx, percent: int=None):
+    @commands.command(pass_context=True, name="volume", no_pm=True)
+    async def audioset_volume(self, ctx, percent: int=None):
         """Sets the volume (0 - 100)
         Note: volume may be set up to 200 but you may experience clipping."""
         server = ctx.message.server
@@ -1136,7 +1091,7 @@ class Audio:
             msg = "Volume must be between 0 and 100."
         await self.bot.say(msg)
 
-    @audioset.command(pass_context=True, name="vote", no_pm=True)
+    @audioset.command(pass_context=True, name="vote", no_pm=True, hidden=True)
     @checks.mod_or_permissions(manage_messages=True)
     async def audioset_vote(self, ctx, percent: int):
         """Percentage needed for the masses to skip songs. 0 to disable."""
@@ -1159,7 +1114,7 @@ class Audio:
         self.set_server_setting(server, "VOTE_ENABLED", enabled)
         self.save_settings()
 
-    @commands.group(pass_context=True)
+    @commands.group(pass_context=True, hidden=True)
     async def audiostat(self, ctx):
         """General stats on audio stuff."""
         if ctx.invoked_subcommand is None:
@@ -1175,7 +1130,7 @@ class Audio:
         await self.bot.say("Currently playing music in {} servers.".format(
             count))
 
-    @commands.group(pass_context=True)
+    @commands.group(pass_context=True, hidden=True)
     async def cache(self, ctx):
         """Cache management tools."""
         if ctx.invoked_subcommand is None:
@@ -1201,15 +1156,19 @@ class Audio:
         await self.bot.say("Cache is currently at {:.3f} MB.".format(
             self._cache_size()))
 
-    @commands.group(pass_context=True, hidden=True, no_pm=True)
-    @checks.is_owner()
+    @commands.group(pass_context=True, no_pm=True)
     async def disconnect(self, ctx):
         """Disconnects from voice channel in current server."""
+        colour = ''.join([random.choice('0123456789ABCDEF') for x in range(6)])
+        colour = int(colour, 16)
         if ctx.invoked_subcommand is None:
             server = ctx.message.server
             await self._stop_and_disconnect(server)
+            embed=discord.Embed(description="**Disconnected from voice channel.**", colour=discord.Colour(value=colour))
+            await self.bot.say(embed=embed)
 
     @disconnect.command(name="all", hidden=True, no_pm=True)
+    @checks.is_owner()
     async def disconnect_all(self):
         """Disconnects from all voice channels."""
         while len(list(self.bot.voice_clients)) != 0:
@@ -1217,20 +1176,42 @@ class Audio:
             await self._stop_and_disconnect(vc.server)
         await self.bot.say("done.")
 
-    @commands.command(hidden=True, pass_context=True, no_pm=True, aliases=["join", "summon"])
-    @checks.is_owner()
+    @commands.command(hidden=True, pass_context=True, no_pm=True)
     async def joinvoice(self, ctx):
         """Joins your voice channel"""
+        colour = ''.join([random.choice('0123456789ABCDEF') for x in range(6)])
+        colour = int(colour, 16)
         author = ctx.message.author
         server = ctx.message.server
         voice_channel = author.voice_channel
 
-        if voice_channel is not None:
-            self._stop(server)
+        #state = self.voice_states.get(server.id)
 
-        await self._join_voice_channel(voice_channel)
+        if not self.voice_connected(server):
+            try:
+                self.has_connect_perm(author, server)
+            except AuthorNotConnected:
+                await self.bot.say("You must join a voice channel before I can"
+                                   " play anything.")
+                return
+            except UnauthorizedConnect:
+                await self.bot.say("I don't have permissions to join your"
+                                   " voice channel.")
+                return
+            except UnauthorizedSpeak:
+                await self.bot.say("I don't have permissions to speak in your"
+                                   " voice channel.")
+                return
+            else:
+                await self._join_voice_channel(voice_channel)
+        else:
+            #await self.bot.move_member(self.bot.user, voice_channel)#
+            await self.voice_client(server).move_to(voice_channel)
 
-    @commands.group(pass_context=True, no_pm=True)
+        embed = discord.Embed(description="**Connected to voice channel.**", colour=discord.Colour(value=colour))
+        await self.bot.say(embed=embed)
+
+    @commands.group(pass_context=True, no_pm=True, hidden=True)
     async def local(self, ctx):
         """Local playlists commands"""
         if ctx.invoked_subcommand is None:
@@ -1300,7 +1281,7 @@ class Audio:
 
     @commands.command(pass_context=True, no_pm=True)
     async def pause(self, ctx):
-        """Pauses the current song, `[p]resume` to continue."""
+        """Pauses the current song, [p]resume to continue."""
         server = ctx.message.server
         if not self.voice_connected(server):
             await self.bot.say("Not voice connected in this server.")
@@ -1317,8 +1298,12 @@ class Audio:
         else:
             await self.bot.say("Nothing playing, nothing to pause.")
 
+    @commands.command(pass_context=True, no_pm=True, name="queue")
+    async def _queue(self, ctx):
+        await self._queue_list(ctx)
+
     @commands.command(pass_context=True, no_pm=True)
-    async def play(self, ctx, *, url_or_search_terms):
+    async def play(self, ctx, *, url_or_search_terms=None):
         """Plays a link / searches and play"""
         url = url_or_search_terms
         if url is None: return await self._queue_list(ctx)  # Default to queue
@@ -1330,25 +1315,34 @@ class Audio:
 
         # Checking if playing in current server
 
-        if self.is_playing(server):
-            await ctx.invoke(self._queue, url=url)
-            return  # Default to queue
+        #if self.is_playing(server):
+        #    await ctx.invoke(self._queue, url=url)
+        #    return  # Default to queue
+
+        # If not playing, spawn a downloader if it doesn't exist and begin
+        #   downloading the next song
+
+        if "." in url:
+            if not self._valid_playable_url(url):
+                await self.bot.say("That's not a valid URL.")
+                return
+
+        if self.currently_downloading(server):
+            await self.bot.say("I'm already downloading a file!")
+            return
 
         # Checking already connected, will join if not
 
         try:
             self.has_connect_perm(author, server)
         except AuthorNotConnected:
-            await self.bot.say("You must join a voice channel before I can"
-                               " play anything.")
+            await self.bot.say("You must join a voice channel before I can play anything.")
             return
         except UnauthorizedConnect:
-            await self.bot.say("I don't have permissions to join your"
-                               " voice channel.")
+            await self.bot.say("I don't have permissions to join your voice channel.")
             return
         except UnauthorizedSpeak:
-            await self.bot.say("I don't have permissions to speak in your"
-                               " voice channel.")
+            await self.bot.say("I don't have permissions to speak in your voice channel.")
             return
 
         if not self.voice_connected(server):
@@ -1358,46 +1352,25 @@ class Audio:
                 await self._stop_and_disconnect(server)
                 await self._join_voice_channel(voice_channel)
 
-        # If not playing, spawn a downloader if it doesn't exist and begin
-        #   downloading the next song
+        if not self.is_playing(server):
+            self._stop_player(server)
+            self._clear_queue(server)
 
-        if self.currently_downloading(server):
-            await self.bot.say("I'm already downloading a file!")
-            return
 
-        url = url.strip("<>")
-
-        if self._match_any_url(url):
-            if not self._valid_playable_url(url):
-                await self.bot.say("That's not a valid URL.")
-                return
-        else:
-            url = url.replace("/", "&#47")
-            url = "[SEARCH:]" + url
-
-        if "[SEARCH:]" not in url and "youtube" in url:
-            url = url.split("&")[0]  # Temp fix for the &list issue
-
-        self._stop_player(server)
-        self._clear_queue(server)
-        self._add_to_queue(server, url)
-        
         songlist = None
         if self._match_sc_playlist(url):
-            msg = await self.bot.say("Proccessing soundcloud playlist... This could take a few moments!")
+            await self.bot.say("Enumerating soundcloud playlist... This could take a few moments")
             songlist = await self._parse_sc_playlist(url)
         elif self._match_yt_playlist(url):
-            msg = await self.bot.say("Enumerating youtube playlist... This could take a few moments!")
+            await self.bot.say("Enumerating youtube playlist... This could take a few moments")
             songlist = await self._parse_yt_playlist(url)
 
         if songlist:
             #playlist = self._make_playlist(author, url, songlist)
             #print("playlist {} \nsonglist {}".format(playlist.playlist, songlist))
 
-            msg2 = await self.bot.edit_message(msg, "{} where proccessed, and added to the playlist!".format(len(songlist)))
+            await self.bot.say("{}, **Enqueued {} songs to the playlist.**".format(author.mention, len(songlist)))
             self._extend_to_queue(server, songlist, author=author)
-            await asyncio.sleep(5)
-            await self.bot.delete_message(msg2)
         else:
             if not "." in url:
                 url = url.replace("/", "&#47")
@@ -1405,13 +1378,20 @@ class Audio:
 
             if "[SEARCH:]" not in url and "youtube" in url:
                 url = url.split("&")[0]  # Temp fix for the &list issue
+
+            await self.bot.say("Enqueued your song! :white_check_mark:")
+            self._add_to_queue(server, url, author=author)
+
         self.queue[server.id]["CHANNELID"] = channel.id
 
     @commands.command(pass_context=True, no_pm=True)
     async def prev(self, ctx):
         """Goes back to the last song."""
         # Current song is in NOW_PLAYING
-        server = ctx.message.server
+        message = ctx.message
+        server = message.server
+        channel = message.channel
+        author = message.author
 
         if self.is_playing(server):
             curr_url = self._get_queue_nowplaying(server).webpage_url
@@ -1423,12 +1403,11 @@ class Audio:
                 except IndexError:
                     pass
 
-            log.debug("prev on sid {}, curr_url {}".format(server.id,
-                                                           curr_url))
+            log.debug("prev on sid {}, curr_url {}".format(server.id, curr_url))
 
-            self._addleft_to_queue(server, curr_url)
+            self._addleft_to_queue(server, curr_url, author)
             if last_url:
-                self._addleft_to_queue(server, last_url)
+                self._addleft_to_queue(server, last_url, author)
             self._set_queue_nowplaying(server, None)
 
             self.voice_client(server).audio_player.stop()
@@ -1438,18 +1417,18 @@ class Audio:
             await self.bot.say("Not playing anything on this server.")
 
     @commands.group(pass_context=True, no_pm=True)
-    async def playlist(self, ctx):
-        """Playlist management/control."""
+    async def mixtape(self, ctx):
+        """Mixtape creating and editing."""
         if ctx.invoked_subcommand is None:
             await send_cmd_help(ctx)
 
-    @playlist.command(pass_context=True, no_pm=True, name="create")
+    @mixtape.command(pass_context=True, no_pm=True, name="create")
     async def playlist_create(self, ctx, name):
-        """Creates an empty playlist"""
+        """Creates an empty mixtape"""
         server = ctx.message.server
         author = ctx.message.author
         if not self._valid_playlist_name(name) or len(name) > 25:
-            await self.bot.say("That playlist name is invalid. It must only"
+            await self.bot.say("That mixtape name is invalid. It must only"
                                " contain alpha-numeric characters or _.")
             return
 
@@ -1462,25 +1441,25 @@ class Audio:
         playlist.server = server
 
         self._save_playlist(server, name, playlist)
-        await self.bot.say("Empty playlist '{}' saved.".format(name))
+        await self.bot.say("Empty mixtape '{}' saved. :writing_hand::skin-tone-3:".format(name))
 
-    @playlist.command(pass_context=True, no_pm=True, name="add")
+    @mixtape.command(pass_context=True, no_pm=True, name="add")
     async def playlist_add(self, ctx, name, url):
-        """Add a YouTube or Soundcloud playlist."""
+        """Add a YouTube or Soundcloud mixtape."""
         server = ctx.message.server
         author = ctx.message.author
         if not self._valid_playlist_name(name) or len(name) > 25:
-            await self.bot.say("That playlist name is invalid. It must only"
+            await self.bot.say("That mixtape name is invalid. It must only"
                                " contain alpha-numeric characters or _.")
             return
 
         if self._valid_playable_url(url):
             try:
                 await self.bot.say("Enumerating song list... This could take"
-                                   " a few moments.")
+                                   " a few moments. :writing_hand::skin-tone-3:")
                 songlist = await self._parse_playlist(url)
             except InvalidPlaylist:
-                await self.bot.say("That playlist URL is invalid.")
+                await self.bot.say("That mixtape URL is invalid.")
                 return
 
             playlist = self._make_playlist(author, url, songlist)
@@ -1490,7 +1469,7 @@ class Audio:
             playlist.server = server
 
             self._save_playlist(server, name, playlist)
-            await self.bot.say("Playlist '{}' saved. Tracks: {}".format(
+            await self.bot.say("Mixtape '{}' saved. Tracks: {}. :writing_hand::skin-tone-3:".format(
                 name, len(songlist)))
         else:
             await self.bot.say("That URL is not a valid Soundcloud or YouTube"
@@ -1498,38 +1477,46 @@ class Audio:
                                " please let us know and we'll get it"
                                " fixed ASAP.")
 
-    @playlist.command(pass_context=True, no_pm=True, name="append")
+    @mixtape.command(pass_context=True, no_pm=True, name="append")
     async def playlist_append(self, ctx, name, url):
-        """Appends to a playlist."""
+        """Appends to a mixtape."""
         author = ctx.message.author
         server = ctx.message.server
         if name not in self._list_playlists(server):
-            await self.bot.say("There is no playlist with that name.")
+            await self.bot.say("There is no mixtapes with that name.")
             return
         playlist = self._load_playlist(
             server, name, local=self._playlist_exists_local(server, name))
         try:
             playlist.append_song(author, url)
         except UnauthorizedSave:
-            await self.bot.say("You're not the author of that playlist.")
+            await self.bot.say("You're not the author of that mixtape.")
         except InvalidURL:
             await self.bot.say("Invalid link.")
         else:
-            await self.bot.say("Done.")
+            await self.bot.say("Done. :writing_hand::skin-tone-3:")
 
-    @playlist.command(pass_context=True, no_pm=True, name="list")
+    @mixtape.command(pass_context=True, no_pm=True, name="extend")
+    async def playlist_extend(self, ctx, playlist_url_or_name):
+        """Extends a mixtape with a mixtape link"""
+        # Need better wording ^
+        await self.bot.say("Not implemented yet.")
+
+    @mixtape.command(pass_context=True, no_pm=True, name="list")
     async def playlist_list(self, ctx):
         """Lists all available playlists"""
-        server = ctx.message.server
-        playlists = ", ".join(self._list_playlists(server))
-        if playlists:
-            playlists = "Available playlists:\n\n" + playlists
-            for page in pagify(playlists, delims=[" "]):
-                await self.bot.say(page)
+        files = self._list_playlists(ctx.message.server)
+        if files:
+            msg = "```css\n["
+            for f in files:
+                msg += "{}, ".format(f)
+            msg = msg.strip(", ")
+            msg += "]```"
+            await self.bot.say("Available mixtapes:\n{}".format(msg))
         else:
             await self.bot.say("There are no playlists.")
 
-    @playlist.command(pass_context=True, no_pm=True, name="queue")
+    @mixtape.command(pass_context=True, no_pm=True, name="queue")
     async def playlist_queue(self, ctx, url):
         """Adds a song to the playlist loop.
         Does NOT write to disk."""
@@ -1549,17 +1536,18 @@ class Audio:
         # We have a queue to modify
         self._add_to_queue(server, url)
 
+        self.queue[server.id]["CHANNELID"] = channel.id
+
         await self.bot.say("Queued.")
 
-    @playlist.command(pass_context=True, no_pm=True, name="remove")
+    @mixtape.command(pass_context=True, no_pm=True, name="remove")
     async def playlist_remove(self, ctx, name):
-        """Deletes a saved playlist."""
+        """Deletes a saved mixtape."""
         author = ctx.message.author
         server = ctx.message.server
 
         if not self._valid_playlist_name(name):
-            await self.bot.say("The playlist's name contains invalid "
-                               "characters.")
+            await self.bot.say("The playlist's name contains invalid characters.")
             return
 
         if not self._playlist_exists(server, name):
@@ -1574,13 +1562,13 @@ class Audio:
             return
 
         self._delete_playlist(server, name)
-        await self.bot.say("Playlist deleted.")
+        await self.bot.say("Mixtape deleted. :writing_hand::skin-tone-3:")
 
-
-    @playlist.command(pass_context=True, no_pm=True, name="start")
+    @mixtape.command(pass_context=True, no_pm=True, name="start")
     async def playlist_start(self, ctx, name):
-        """Plays a playlist."""
+        """Plays a mixtape."""
         server = ctx.message.server
+        channel = ctx.message.channel
         author = ctx.message.author
         voice_channel = ctx.message.author.voice_channel
 
@@ -1610,70 +1598,25 @@ class Audio:
                 else:
                     await self._join_voice_channel(voice_channel)
             self._clear_queue(server)
-            playlist = self._load_playlist(server, name,
-                                           local=self._playlist_exists_local(
-                                               server, name))
+            playlist = self._load_playlist(server, name, local=self._playlist_exists_local(server, name))
             if caller == "playlist_start_mix":
                 shuffle(playlist.playlist)
 
             self._play_playlist(server, playlist)
-            await self.bot.say("Playlist queued.")
+            self.queue[server.id]["CHANNELID"] = channel.id
+            await self.bot.say("Mixtape queued.")
         else:
-            await self.bot.say("That playlist does not exist.")
+            await self.bot.say("That mixtape does not exist.")
 
-    @playlist.command(pass_context=True, no_pm=True, name="mix")
+    @mixtape.command(pass_context=True, no_pm=True, name="mix")
     async def playlist_start_mix(self, ctx, name):
-        """Plays and mixes a playlist."""
+        """Plays and mixes a mixtape."""
         await self.playlist_start.callback(self, ctx, name)
-
-    @commands.command(pass_context=True, no_pm=True, name="queue")
-    async def _queue(self, ctx, *, url=None):
-        """Queues a song to play next. Extended functionality in `[p]help`
-        If you use `queue` when one song is playing, your new song will get
-            added to the song loop (if running). If you use `queue` when a
-            playlist is running, it will temporarily be played next and will
-            NOT stay in the playlist loop."""
-        if url is None:
-            return await self._queue_list(ctx)
-        server = ctx.message.server
-        if not self.voice_connected(server):
-            await ctx.invoke(self.play, url_or_search_terms=url)
-            return
-
-        # We are connected somewhere
-        if server.id not in self.queue:
-            log.debug("Something went wrong, we're connected but have no"
-                      " queue entry.")
-            raise VoiceNotConnected("Something went wrong, we have no internal"
-                                    " queue to modify. This should never"
-                                    " happen.")
-
-        url = url.strip("<>")
-
-        if self._match_any_url(url):
-            if not self._valid_playable_url(url):
-                await self.bot.say("That's not a valid URL.")
-                return
-        else:
-            url = "[SEARCH:]" + url
-
-        if "[SEARCH:]" not in url and "youtube" in url:
-            url = url.split("&")[0]  # Temp fix for the &list issue
-
-        # We have a queue to modify
-        if self.queue[server.id]["PLAYLIST"]:
-            log.debug("queueing to the temp_queue for sid {}".format(
-                server.id))
-            self._add_to_temp_queue(server, url)
-        else:
-            log.debug("queueing to the actual queue for sid {}".format(
-                server.id))
-            self._add_to_queue(server, url)
-        await self.bot.say("Queued.")
 
     async def _queue_list(self, ctx):
         """Not a command, use `queue` with no args to call this."""
         server = ctx.message.server
+        now_playing = self._get_queue_nowplaying(server)
         if server.id not in self.queue:
             await self.bot.say("Nothing playing on this server!")
             return
@@ -1681,43 +1624,37 @@ class Audio:
             await self.bot.say("Nothing queued on this server.")
             return
 
-        msg = ""
-
-        now_playing = self._get_queue_nowplaying(server)
+        em = discord.Embed(description="{}, here is the current playlist!".format(ctx.message.author.display_name), colour=discord.Colour.blue())
 
         if now_playing is not None:
-            msg += "\n**Now playing:**\n{}\n<{}>\n".format(now_playing.title, now_playing.webpage_url)
+            em.add_field(name="Now playing", value="{}".format(now_playing.title), inline=False)
 
         queue_url_list = self._get_queue(server, 5)
         tempqueue_url_list = self._get_queue_tempqueue(server, 5)
 
-        waiter = await self.bot.say("Gathering information...")
+        awaiter = await self.bot.say("Writing information down......:writing_hand::skin-tone-3:")
 
         queue_song_list = await self._download_all(queue_url_list)
         tempqueue_song_list = await self._download_all(tempqueue_url_list)
 
         song_info = []
-        for num, song in enumerate(tempqueue_song_list, 1):
-            try:
-                song_info.append("{}. {.title}".format(num, song))
-            except AttributeError:
-                song_info.append("{}. {.webpage_url}".format(num, song))
-
         for num, song in enumerate(queue_song_list, len(song_info) + 1):
             if num > 5:
                 break
             try:
-                song_info.append("{}. {.title}".format(num, song))
+                song_info.append("{}) {.title}".format(num, song))
                 more_songs = len(self.queue[server.id]["QUEUE"]) - 5
             except AttributeError:
-                song_info.append("{}. {.webpage_url}".format(num, song))
-        msg += "\n**Next up:**\n" + "\n".join(song_info)
+                song_info.append("{}) {.webpage_url}".format(num, song))
+        em.add_field(name="Next up", value="\n".join(song_info))
         if more_songs > 0:
-            msg += "\n\n**and {} more songs....**".format(more_songs)
-        await self.bot.delete_message(waiter)
-        await self.bot.say(msg)
+            em.set_footer(text="and {} more songs....".format(more_songs))
+        else:
+            pass
+        await self.bot.delete_message(awaiter)
+        await self.bot.say(embed=em)
 
-    @commands.group(pass_context=True, no_pm=True)
+    @commands.group(pass_context=True, no_pm=True, hidden=True)
     async def repeat(self, ctx):
         """Toggles REPEAT"""
         server = ctx.message.server
@@ -1849,42 +1786,19 @@ class Audio:
 
         return is_owner or is_server_owner or is_admin or is_mod or alone
 
+    @commands.command(pass_context=True, no_pm=True, hidden=True)
+    async def slaps(self, ctx):
+        """Makes Brooklyn Sing."""
+        ids = ("anI5b2PEmdA", "251cxou3yR4", "hJAylb8YVXY", "J59UasgEqTw",
+               "M2NIMHVmGwk", "lsJLLEwUYZM")
+        url = "https://www.youtube.com/watch?v={}".format(choice(ids))
+        await ctx.invoke(self.play, url_or_search_terms=url)
 
-    @commands.command(pass_context=True, no_pm=True)
-    async def np(self, ctx):
+    @commands.command(pass_context=True, no_pm=True, aliases=["np","nowplay"])
+    async def nowplaying(self, ctx):
         """Info about the current song."""
-        server = ctx.message.server
-        if not self.is_playing(server):
-            await self.bot.say("I'm not playing on this server.")
-            return
-
-        song = self._get_queue_nowplaying(server)
-        if song:
-            if not hasattr(song, 'creator'):
-                song.creator = None
-            if not hasattr(song, 'view_count'):
-                song.view_count = None
-            if not hasattr(song, 'uploader'):
-                song.uploader = None
-            if hasattr(song, 'duration'):
-                m, s = divmod(song.duration, 60)
-                h, m = divmod(m, 60)
-                if h:
-                    dur = "{0}:{1:0>2}:{2:0>2}".format(h, m, s)
-                else:
-                    dur = "{0}:{1:0>2}".format(m, s)
-            else:
-                dur = None
-            msg = ("**Title:** {}\n**Author:** {}\n**Uploader:** {}\n"
-                   "**Views:** {}\n**Ratings**: \👍{} | {}\👎\n**Duration:** {}\n\n<{}>".format(
-                       song.title, song.creator, song.uploader,
-                       song.view_count, str(song.like_count), str(song.dislike_count), dur, song.webpage_url))
-            await self.bot.say(msg.replace("**Author:** None\n", "")
-                                  .replace("**Views:** None\n", "")
-                                  .replace("**Uploader:** None\n", "")
-                                  .replace("**Duration:** None\n", ""))
-        else:
-            await self.bot.say("Failed to get information.")
+        message = ctx.message
+        await self._embed_np2(message=message)
 
     @commands.command(pass_context=True, no_pm=True)
     async def stop(self, ctx):
@@ -1896,14 +1810,19 @@ class Audio:
                     await self.bot.say('Stopping...')
                     self._stop(server)
                 else:
-                    await self.bot.say("You can't stop music when there are other"
-                                       " people in the channel! Vote to skip"
-                                       " instead.")
+                    await self.bot.say(embed=discord.Embed(description="There is other people listening to the music! Skip instead!", colour=discord.Colour.red()))
             else:
-                await self.bot.say("You need to be in the voice channel to stop the music.")
+                await self.bot.say(embed=discord.Embed(description="You need to be in the voice channel to stop the music.", colour=discord.Colour.red()))
         else:
-            await self.bot.say("Can't stop if I'm not playing.")
-          
+            await self.bot.say(embed=discord.Embed(description="Can't stop if I'm not playing.", colour=discord.Colour.dark_blue()))
+
+    @commands.command(name="yt", pass_context=True, no_pm=True, hidden=True)
+    async def yt_search(self, ctx, *, search_terms: str):
+        """Searches and plays a video from YouTube"""
+        await self.bot.say("Searching...")
+        await ctx.invoke(self.play, url_or_search_terms=search_terms)
+
+
     async def _embed_np(self, message, server:discord.Server=None, channel:discord.Channel=None, author:discord.Member=None):
         
         """Info about the current song."""
@@ -1937,8 +1856,55 @@ class Audio:
             else:
                 dur = None
             embed = discord.Embed(colour=discord.Colour.blue())
-            msg = "**Now playing** in {}: **{}** `{}`".format(server.me.voice_channel, song.title, dur)
-            await self.bot.send_message(channel, msg)
+            embed.add_field(name="Now playing...", value="{} | {}\n{}".format(song.title, dur, song.webpage_url))
+            #embed.set_thumbnail(url=song.thumbnail)
+            embed.set_thumbnail(url=song.thumbnail)
+            msg = await self.bot.send_message(channel, embed=embed)
+            await asyncio.sleep(5)
+            await self.bot.delete_message(msg)
+
+    async def _embed_np2(self, message, server:discord.Server=None, channel:discord.Channel=None, author:discord.Member=None):
+        
+        """Info about the current song."""
+        server = server or message.server
+        channel = channel or message.channel
+        author = author or server.me
+        if not self.is_playing(server):
+            hai = discord.Embed(description="I'm not playing on this server.", colour=discord.Colour.blue())
+            await self.bot.send_message(channel, embed=hai)
+            return
+
+        song = self._get_queue_nowplaying(server)
+        if song:
+            if not hasattr(song, 'creator'):
+                song.creator = None
+            if not hasattr(song, 'view_count'):
+                song.view_count = None
+            if not hasattr(song, 'like_count'):
+                song.like_count = None
+            if not hasattr(song, 'dislike_count'):
+                song.dislike_count = None
+            if not hasattr(song, 'uploader'):
+                song.uploader = None
+            if hasattr(song, 'duration'):
+                m, s = divmod(song.duration, 60)
+                h, m = divmod(m, 60)
+                if h:
+                    dur = "{0}:{1:0>2}:{2:0>2}".format(h, m, s)
+                else:
+                    dur = "{0}:{1:0>2}".format(m, s)
+            else:
+                dur = None
+            embed = discord.Embed(colour=0x555287)
+            embed.set_author(name="Now playing in {}".format(server.me.voice_channel), icon_url=author.avatar_url)
+            embed.add_field(name="Title", value=song.title, inline=False)
+            embed.add_field(name="Uploader", value=song.uploader)
+            embed.add_field(name="Views", value=str(song.view_count))
+            embed.add_field(name="Ratings", value="{}\👍 | {}\👎".format(str(song.like_count), str(song.dislike_count)))
+            embed.add_field(name="Duartion", value=dur)
+            embed.add_field(name="Link", value=song.webpage_url, inline=False)
+            embed.set_thumbnail(url=song.thumbnail)
+            await self.bot.send_message(channel, embed=embed)
 
     def is_playing(self, server):
         if not self.voice_connected(server):
@@ -2059,14 +2025,16 @@ class Audio:
         repeat = self.queue[server.id]["REPEAT"]
         last_song = self.queue[server.id]["NOW_PLAYING"]
         channel = server.get_channel(self.queue[server.id]["CHANNELID"])
+        member = self.queue[server.id]["AUTHORID"]
+
         assert temp_queue is self.queue[server.id]["TEMP_QUEUE"]
         assert queue is self.queue[server.id]["QUEUE"]
+        assert member is self.queue[server.id]["AUTHORID"]
 
         # _play handles creating the voice_client and player for us
         author=None
         if not self.is_playing(server):
-            log.debug("not playing anything on sid {}".format(server.id) +
-                      ", attempting to start a new song.")
+            log.debug("not playing anything on sid {}".format(server.id) + ", attempting to start a new song.")
             self.skip_votes[server.id] = []
             # Reset skip votes for each new song
             if len(temp_queue) > 0:
@@ -2078,6 +2046,10 @@ class Audio:
                     return
             elif len(queue) > 0:  # We're in the normal queue
                 url = queue.popleft()
+                try:
+                    author = server.get_member(member.popleft())
+                except:
+                    author = None
                 log.debug("calling _play on the normal queue")
                 try:
                     song = await self._play(sid, url)
