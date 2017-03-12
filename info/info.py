@@ -70,7 +70,7 @@ class Info:
         await self.bot.say("Total bans: `{}`\n```{}```".format(bancount, banlist))
     
     @commands.command(pass_context=True)
-    async def info(self, ctx):
+    async def about(self, ctx):
         """Shows information on ETLegacy."""
         prefix = ctx.prefix
         owner = "! ETLegacy™#2288"
