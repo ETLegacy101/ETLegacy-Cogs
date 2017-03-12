@@ -183,17 +183,6 @@ class Useful:
                 if sent % 5 == 0:
                     await self.bot.edit_message(sending, statusMsg.format(status))
         await self.bot.edit_message(sending, "Done!")
-
-    @commands.command(name="autopost")
-    @checks.mod_or_permissions()
-    async def _autopost(self, times:int, interval:float, *, msg):
-        """Posts a message every set amount of minutes.
-        The interval is in minutes."""
-        time = 0
-        while time < times:
-            await self.bot.say(msg)
-            time = time + 1
-            await asyncio.sleep(interval * 60)
         
     @commands.command()
     @checks.is_owner()
