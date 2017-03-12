@@ -81,9 +81,9 @@ class Info:
         e.add_field(name="Links:", value="[Support Server.](https://discord.gg/dVEkSh4)\n[Invite url.](https://discordapp.com/oauth2/authorize?client_id=248032345603571712&scope=bot&permissions=-1)")
         e.set_author(name="ETLegacy#1697", icon_url="https://images-ext-1.discordapp.net/.eJwFwQsOwiAMANC7cABa2k5gifEs5bO4RB0B1ETj3X3va579ZlZznbONFSCXhy37yEcv2prNxx30pVP7AJKATCzLCXnxzjsCr0TIZdMUa0CssnFMLMlhTDH4bN81tcvYP_XskMT8_qcxIYk._YrCsmQnelUli8Exk3yukS5BDcc?width=250&height=250")
         e.add_field(name="Changelog:", value="""**Added:**
-`1)` b!serverstats | Shows stats on users status and servercount.
-`2)` b!banlist | Shows bans  in the server.
-`3)` b!cookie | Give a user a cookie. (Requested by user.)""")
+`1)` *serverstats | Shows stats on users status and servercount.
+`2)` *banlist | Shows bans  in the server.
+`3)` *cookie | Give a user a cookie. (Requested by user.)""")
         e.set_thumbnail(url="https://images-ext-1.discordapp.net/.eJwFwQsOwiAMANC7cABa2k5gifEs5bO4RB0B1ETj3X3va579ZlZznbONFSCXhy37yEcv2prNxx30pVP7AJKATCzLCXnxzjsCr0TIZdMUa0CssnFMLMlhTDH4bN81tcvYP_XskMT8_qcxIYk._YrCsmQnelUli8Exk3yukS5BDcc?width=250&height=250")
         try:
             await self.bot.say(embed=e)
