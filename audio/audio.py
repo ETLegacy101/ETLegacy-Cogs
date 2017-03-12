@@ -1176,7 +1176,7 @@ class Audio:
             await self._stop_and_disconnect(vc.server)
         await self.bot.say("done.")
 
-    @commands.command(hidden=True, pass_context=True, no_pm=True, aliases=["summon"])
+    @commands.command(hidden=True, pass_context=True, no_pm=True)
     async def joinvoice(self, ctx):
         """Joins your voice channel"""
         colour = ''.join([random.choice('0123456789ABCDEF') for x in range(6)])
