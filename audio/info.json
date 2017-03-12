@@ -1,9 +1,9 @@
 
 {
     "AUTHOR" : "ETLegacy",
-    "SHORT" : "Antilink",
-    "DESCRIPTION" : "Antilink",
+    "SHORT" : "Audio",
+    "DESCRIPTION" : "Audio",
     "DISABLED" : false,
-    "NAME" : "Antilink",
-    "INSTALL_MSG" : "Thanks for installing my Antilink cog!"
+    "NAME" : "Audio",
+    "INSTALL_MSG" : "Thanks for installing my audio cog!"
 }
