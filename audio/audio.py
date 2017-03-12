@@ -1,21 +1,3 @@
-Skip to content
-This repository
-Search
-Pull requests
-Issues
-Gist
- @XxxETLegacyXxx
- Sign out
- Watch 0
-  Star 0
- Fork 3 JonnyBoy2000/BrooklynCogs
- Code  Issues 0  Pull requests 0  Projects 0  Wiki  Pulse  Graphs
-Branch: master Find file Copy pathBrooklynCogs/audio6/audio6.py
-b929215  14 days ago
-@JonnyBoy2000 JonnyBoy2000 Update audio6.py
-1 contributor
-RawBlameHistory     
-2247 lines (1864 sloc)  81.6 KB
 import discord
 from discord.ext import commands
 import threading
@@ -1194,7 +1176,7 @@ class Audio:
             await self._stop_and_disconnect(vc.server)
         await self.bot.say("done.")
 
-    @commands.command(hidden=True, pass_context=True, no_pm=True)
+    @commands.command(hidden=True, pass_context=True, no_pm=True, aliases=["summon"])
     async def joinvoice(self, ctx):
         """Joins your voice channel"""
         colour = ''.join([random.choice('0123456789ABCDEF') for x in range(6)])
