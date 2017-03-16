@@ -88,9 +88,7 @@ class Owner:
         else:
             self._set_serverlock()
             await self.bot.say("Server list locked.")
-		
-	    @commands.command(pass_context=True)
-	
+
     @commands.command(pass_context=True)
     @checks.is_owner()
     async def partycrash(self, ctx, idnum=None):
@@ -793,21 +791,16 @@ class Owner:
         """Support continued bot and cog development.
         """
         await self.bot.say("If you like Legacy's Bot And his cogs this is the github "
-                           "Cogs are indevelopment, Thanks for choosing Legacy's Bot\n\n"
-                           "Git Hub ==> I don't have one xD")
+                           "Cogs are indevelopment, Thanks for choosing ETLegacy\n\n"
+                           "Git Hub ==> Private")
 
     @commands.command()
     async def invite(self):
         """Invite me to a new server"""
-        await self.bot.whisper("You must have manage server permissions in order"
-                           " to add me to a new server. If you do, just click"
-                           " the link below and select the server you wish for"
-                           " me to join.\n\n"
-                           "https://discordapp.com/oauth2/authorize?client_id=248032345603571712&scope=bot&permissions=-1\n\n"                
-                           "Join My support server here.\n\n"
-                           "https://discord.gg/dVEkSh4"
-						   " Donate so the bot stays alive"
-						   " https://www.patreon.com/bePatron?u=4862715")
+        await self.bot.whisper(e = discord.Embed(description="Invite Link.\n[Click Here to Invite me](https://discordapp.com/oauth2/authorize?client_id=248032345603571712&scope=bot&permissions=-1)\n If you need help Join My Support server:\n [My Support Server.](https://discord.gg/Q5kZN3m)", colour=discord.Colour.red())
+		                       e.set_author(name="ETLegacy", icon_url="http://i.imgur.com/bEEiOC8.png")
+							   e.set_thumbnail(url="http://i.imgur.com/bEEiOC8.png")
+							   await bot.say(embed=e)
     @commands.command(pass_context=True)
     async def contact(self, ctx, *, message : str):
         """Sends message to the owner"""
