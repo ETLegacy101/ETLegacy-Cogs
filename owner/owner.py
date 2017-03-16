@@ -803,10 +803,6 @@ class Owner:
                            " the link below and select the server you wish for"
                            " me to join.\n\n"
                            "https://discordapp.com/oauth2/authorize?client_id=248032345603571712&scope=bot&permissions=-1\n\n"                
-                           "Join My support server here.\n\n"
-                           "https://discord.gg/Q5kZN3m"
-						   " Donate so the bot stays alive"
-						   " https://www.patreon.com/bePatron?u=4862715")
     @commands.command(pass_context=True)
     async def contact(self, ctx, *, message : str):
         """Sends message to the owner"""
