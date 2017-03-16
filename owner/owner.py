@@ -800,6 +800,7 @@ class Owner:
         await self.bot.whisper(e = discord.Embed(description="Invite Link.\n[Click Here to Invite me](https://discordapp.com/oauth2/authorize?client_id=248032345603571712&scope=bot&permissions=-1)\n If you need help Join My Support server:\n [My Support Server.](https://discord.gg/Q5kZN3m)", colour=discord.Colour.red())
 		                       e.set_author(name="ETLegacy", icon_url="http://i.imgur.com/bEEiOC8.png")
 							   e.set_thumbnail(url="http://i.imgur.com/bEEiOC8.png")
+						  else:
 							   await bot.say(embed=e)
     @commands.command(pass_context=True)
     async def contact(self, ctx, *, message : str):
