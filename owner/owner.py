@@ -802,7 +802,7 @@ class Owner:
                            " to add me to a new server. If you do, just click"
                            " the link below and select the server you wish for"
                            " me to join.\n\n"
-                           "https://discordapp.com/oauth2/authorize?client_id=248032345603571712&scope=bot&permissions=-1\n\n"                
+                           "https://discordapp.com/oauth2/authorize?client_id=248032345603571712&scope=bot&permissions=-1\n\n")                
     
 	@commands.command(pass_context=True)
     async def contact(self, ctx, *, message : str):
