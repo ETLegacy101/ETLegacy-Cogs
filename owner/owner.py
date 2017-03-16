@@ -88,6 +88,21 @@ class Owner:
         else:
             self._set_serverlock()
             await self.bot.say("Server list locked.")
+		
+	    @commands.command(pass_context=True)
+    
+    @checks.is_owner()
+    async def servprune(self):
+        """Leaves server with less than 25 members"""
+        servk = []
+        start_count = len(self.bot.servers)
+        [servk.append(s) for s in self.bot.servers]
+        for s in servk:
+            if len(s.members) <= 25:
+                await self.bot.leave_server(s)
+                print("left {}. Server had {} members.".format(s.name, len(s.members)))
+        end_count = len(self.bot.servers)
+        return "Left {} servers".format((start_count - end_count))
 
     @commands.command(pass_context=True)
     @checks.is_owner()
