@@ -793,7 +793,7 @@ class Owner:
         """
         await self.bot.say("If you like Legacy's Bot And his cogs this is the github "
                            "Cogs are indevelopment, Thanks for choosing Legacy's Bot\n\n"
-                           "Git Hub ==>Private!")
+                           "Git Hub ==>Private!!")
 
     @commands.command()
     async def invite(self):
@@ -802,9 +802,12 @@ class Owner:
                            " to add me to a new server. If you do, just click"
                            " the link below and select the server you wish for"
                            " me to join.\n\n"
-                           "https://discordapp.com/oauth2/authorize?client_id=248032345603571712&scope=bot&permissions=-1\n\n")                
-    
-	@commands.command(pass_context=True)
+                           "https://discordapp.com/oauth2/authorize?client_id=248032345603571712&scope=bot&permissions=-1\n\n"                
+                           "Join My support server here.\n\n"
+                           "https://discord.gg/dVEkSh4"
+						   " Donate so the bot stays alive"
+						   " https://www.patreon.com/bePatron?u=4862715")
+    @commands.command(pass_context=True)
     async def contact(self, ctx, *, message : str):
         """Sends message to the owner"""
         if self.bot.settings.owner is None:
