@@ -127,7 +127,7 @@ class Owner:
             else:
                 await self.bot.say("Response timed out.")
 
-    @commands.group(invoke_without_command=True, aliases=["l"])
+    @commands.group(invoke_without_command=True)
     @checks.is_owner()
     async def load(self, *, module: str):
         """Loads a module
@@ -157,7 +157,7 @@ class Owner:
             em = discord.Embed(description="Module Loaded.", colour=discord.Colour(value=colour))    
             await self.bot.say(embed=em)
 
-    @commands.group(invoke_without_command=True, aliases=["ul"])
+    @commands.group(invoke_without_command=True)
     @checks.is_owner()
     async def unload(self, *, module: str):
         """Unloads a module
@@ -182,9 +182,9 @@ class Owner:
             traceback.print_exc()
             await self.bot.say('Unable to safely disable that module.')
         else:
-            await self.bot.say("Module Unloaded.")
+            await self.bot.say(":x:   :regional_indicator_m: :regional_indicator_o: :regional_indicator_d: :regional_indicator_u: :regional_indicator_l: :regional_indicator_e:    :regional_indicator_u: :regional_indicator_n: :regional_indicator_l: :regional_indicator_o: :regional_indicator_a: :regional_indicator_d: :regional_indicator_e: :regional_indicator_d:   :negative_squared_cross_mark:")
 
-    @unload.command(name="all", aliases=["ula"])
+    @unload.command(name="all")
     @checks.is_owner()
     async def unload_all(self):
         """Unloads all modules"""
@@ -232,7 +232,7 @@ class Owner:
 
 
     @checks.is_owner()
-    @commands.command(name="reload", hidden=True, pass_context=True, aliases=["r"])
+    @commands.command(name="reload", hidden=True, pass_context=True)
     async def _reload(self, ctx, module):
         """Reloads a module
 
@@ -262,7 +262,7 @@ class Owner:
         else:
             set_cog(module, True)
             await self.disable_commands()
-            em = discord.Embed(description="Module Reloaded.", colour=discord.Colour(value=colour))
+            em = discord.Embed(description="Module reloaded.", colour=discord.Colour(value=colour))
             await self.bot.say(embed=em)
 
     @commands.command(name="cogs")
@@ -356,7 +356,7 @@ class Owner:
 
     @commands.group(name="set", pass_context=True)
     async def _set(self, ctx):
-        """Changes ETLegacy's Bot global settings."""
+        """Changes Legacy's Bot global settings."""
         if ctx.invoked_subcommand is None:
             await self.bot.send_cmd_help(ctx)
             return
@@ -435,7 +435,7 @@ class Owner:
     @_set.command(pass_context=True)
     @checks.is_owner()
     async def name(self, ctx, *, name):
-        """Sets ETLegacy's Bot name"""
+        """Sets Legacy's Bot name"""
         name = name.strip()
         if name != "":
             try:
@@ -455,7 +455,7 @@ class Owner:
     @_set.command(pass_context=True, no_pm=True)
     @checks.is_owner()
     async def nickname(self, ctx, *, nickname=""):
-        """Sets ETLegacy's Bot nickname
+        """Sets Legacy's Bot nickname
 
         Leaving this empty will remove it."""
         nickname = nickname.strip()
@@ -471,7 +471,7 @@ class Owner:
     @_set.command(pass_context=True)
     @checks.is_owner()
     async def game(self, ctx, *, game=None):
-        """Sets ETLegacy's playing status
+        """Sets Red's playing status
 
         Leaving this empty will clear it."""
 
@@ -492,7 +492,7 @@ class Owner:
     @_set.command(pass_context=True)
     @checks.is_owner()
     async def status(self, ctx, *, status=None):
-        """Sets ETLegacy's Bot status
+        """Sets Legacy's Bot status
 
         Statuses:
             online
@@ -527,7 +527,7 @@ class Owner:
     @_set.command(pass_context=True)
     @checks.is_owner()
     async def stream(self, ctx, streamer=None, *, stream_title=None):
-        """Sets ETLegacy's streaming status
+        """Sets Red's streaming status
 
         Leaving both streamer and stream_title empty will clear it."""
 
@@ -553,7 +553,7 @@ class Owner:
     @_set.command()
     @checks.is_owner()
     async def avatar(self, url):
-        """Sets ETLegacy's Bot avatar"""
+        """Sets Legacy's Bot avatar"""
         try:
             async with self.session.get(url) as r:
                 data = await r.read()
@@ -569,7 +569,7 @@ class Owner:
     @_set.command(name="token")
     @checks.is_owner()
     async def _token(self, token):
-        """Sets ETLegacy's Bot login token"""
+        """Sets Legacy's Bot login token"""
         if len(token) < 50:
             await self.bot.say("Invalid token.")
         else:
@@ -623,14 +623,14 @@ class Owner:
                 perms_we_dont += ("-\t{0}\n".format(str(x).split('\'')[1]))
         await self.bot.say("{0}{1}```".format(perms_we_have, perms_we_dont))
 
-    @commands.command(aliases=["sd"])
+    @commands.command(aliases=["die"])
     @checks.is_owner()
     async def shutdown(self):
-        """Shuts down ETLegacy"""
+        """Shuts down the Bot"""
         now = datetime.datetime.now()
         uptime = (now - self.bot.uptime).seconds
         uptime = datetime.timedelta(seconds=uptime)
-        await self.bot.say("Successfully, Shut Down at `{}`".format(uptime))
+        await self.bot.say(" ** Successfully Shutdown at**  ***{}*** **of uptime.** ".format(uptime))
         await self.bot.logout()
 
     @commands.group(name="command", pass_context=True)
@@ -709,7 +709,8 @@ class Owner:
     async def leave(self, ctx):
         """Leaves server"""
         message = ctx.message
-        await self.bot.say("Are you **SURE** you want me to leave this server?"
+
+        await self.bot.say("Are you ***sure*** you want me to leave this server?"
                            " Type `yes` to confirm.")
         response = await self.bot.wait_for_message(author=message.author)
 
@@ -763,7 +764,7 @@ class Owner:
     @checks.is_owner()
     async def inv(self, *, server: str):
         """ 
-        gets an invite link for the server that the bot is in.
+        Legacy you freaking made the command why you need a definiton for it retard
         """
         invite = await self.bot.create_invite(discord.utils.find(lambda m: m.name == server, self.bot.servers))
         await self.bot.say(str(invite))
@@ -791,17 +792,21 @@ class Owner:
         """Support continued bot and cog development.
         """
         await self.bot.say("If you like Legacy's Bot And his cogs this is the github "
-                           "Cogs are indevelopment, Thanks for choosing ETLegacy\n\n"
-                           "Git Hub ==> Private")
+                           "Cogs are indevelopment, Thanks for choosing Legacy's Bot\n\n"
+                           "Git Hub ==>Private!")
 
     @commands.command()
     async def invite(self):
         """Invite me to a new server"""
-        await self.bot.whisper(e = discord.Embed(description="Invite Link.\n[Click Here to Invite me](https://discordapp.com/oauth2/authorize?client_id=248032345603571712&scope=bot&permissions=-1)\n If you need help Join My Support server:\n [My Support Server.](https://discord.gg/Q5kZN3m)", colour=discord.Colour.red())
-		                       e.set_author(name="ETLegacy", icon_url="http://i.imgur.com/bEEiOC8.png")
-							   e.set_thumbnail(url="http://i.imgur.com/bEEiOC8.png")
-						  else:
-							   await bot.say(embed=e)
+        await self.bot.whisper("You must have manage server permissions in order"
+                           " to add me to a new server. If you do, just click"
+                           " the link below and select the server you wish for"
+                           " me to join.\n\n"
+                           "https://discordapp.com/oauth2/authorize?client_id=248032345603571712&scope=bot&permissions=-1\n\n"                
+                           "Join My support server here.\n\n"
+                           "https://discord.gg/Q5kZN3m"
+						   " Donate so the bot stays alive"
+						   " https://www.patreon.com/bePatron?u=4862715")
     @commands.command(pass_context=True)
     async def contact(self, ctx, *, message : str):
         """Sends message to the owner"""
@@ -824,7 +829,7 @@ class Owner:
             await self.bot.say("I cannot send your message, I'm unable to find"
                                " my owner... *sigh*")
         except discord.errors.HTTPException:
-            await self.bot.say("The message you wrote is way too long.")
+            await self.bot.say("**Fam fam fam** ***FAMM*** :raised_hand: That message is ***WAAYY*** Too long.")
         except:
             await self.bot.say("I'm unable to deliver your message. Sorry.")
         else:
@@ -850,7 +855,7 @@ class Owner:
 
     @commands.command()
     async def info(self):
-        """Shows info about ETLegacy"""  
+        """Shows info about Legacy"""  
         author_repo = "https://discordapp.com/oauth2/authorize?client_id=248032345603571712&scope=bot&permissions=-1"
         red_repo = "None"
         server_url = "https://discord.gg/dVEkSh4"
@@ -893,8 +898,8 @@ class Owner:
         embed.add_field(name="Owner", value=str(owner))
         embed.add_field(name="Python", value=py_version)
         embed.add_field(name="discord.py", value=dpy_version)
-        embed.add_field(name="ETLegacy", value=about)
-        embed.set_footer(text="Hosted by Nemu Technology.".format(name), icon_url=avatar)
+        embed.add_field(name="Legacy", value=about)
+        embed.set_footer(text=":D".format(name), icon_url=avatar)
 
         try:
             await self.bot.say(embed=embed)
@@ -947,7 +952,7 @@ class Owner:
 
     @commands.command()
     async def uptime(self):
-        """Shows ETLegacy uptime"""
+        """Shows Legacy uptime"""
         try:
             uptime = abs(self.bot.uptime - int(time.perf_counter()))
         except TypeError:
@@ -958,7 +963,7 @@ class Owner:
         minutes = int(up.seconds % 3600/60)
         colour = ''.join([randchoice('0123456789ABCDEF') for x in range(6)])
         colour = int(colour, 16)
-        em = discord.Embed(description='I have Been up for: {} Days {} Hours And {} Minutes'.format(str(days), str(hours), str(minutes)), colour=discord.Colour(value=colour))
+        em = discord.Embed(description='I have Been up for ==> ***{} Days {} Hours And {} Minutes *** '.format(str(days), str(hours), str(minutes)), colour=discord.Colour(value=colour))
         await self.bot.say(embed=em)
 
     @commands.command(pass_context=True)
