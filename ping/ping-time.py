@@ -23,7 +23,7 @@ class Ping:
         t1 = time.perf_counter()
         await self.bot.send_typing(channel)
         t2 = time.perf_counter()
-        em = discord.Embed(description="PONG! It took {}ms.".format(round((t2-t1)*1000)), colour=discord.Colour(value=colour))
+        em = discord.Embed(description="Pong: {}ms :ping_pong:".format(round((t2-t1)*1000)), colour=discord.Colour(value=colour))
 
         await self.bot.say(embed=em)
 
