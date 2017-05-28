@@ -216,7 +216,7 @@ class Mod:
             await self.bot.say(" :bangbang:  Removing roles failed! Possibly due to role hierachy, or the bot not having perms:bangbang: ")
             return
 
-    @commands.command(no_pm=True, pass_context=True, aliases=["ar"])
+    @commands.command(no_pm=True, pass_context=True)
     @checks.admin_or_permissions(manage_roles=True)
     async def addrole(self, ctx, rolename, user: discord.Member=None):
         """Adds a role to a user, defaults to author
@@ -242,7 +242,7 @@ class Mod:
         await self.bot.add_roles(user, role)
         await self.bot.say(" **Succesfully** Added role `{}`  to `{}` :thumbsup:".format(role.name, user.name).replace("`", ""))
 
-    @commands.command(pass_context=True, no_pm=True, aliases=["cr"])
+    @commands.command(pass_context=True, no_pm=True)
     @checks.admin_or_permissions(manage_roles=True)
     async def createrole(self, ctx, *, rolename: str = None):
         """Create a role using the bot The role will be listed at the bottom of role list."""
@@ -255,7 +255,7 @@ class Mod:
         message = ":bangbang: I've **Succesfully** created the role `{}` :thumbsup:".format(name)
         await self.bot.say(message)
 
-    @commands.command(pass_context=True, aliases=["dr"])
+    @commands.command(pass_context=True)
     @checks.admin_or_permissions(manage_roles=True)
     async def deleterole(self, ctx, rolename):
         """Deletes an existing role. Bot must be above the role "Role hierachy" mate"""
@@ -309,7 +309,7 @@ class Mod:
         await self.bot.say(
             "Self roles successfully set to: **{}**".format(parsed_role_set))
 
-    @commands.command(no_pm=True, pass_context=True, aliases=["rr"])
+    @commands.command(no_pm=True, pass_context=True)
     @checks.admin_or_permissions(manage_roles=True)
     async def removerole(self, ctx, rolename, user: discord.Member=None):
         """Removes a role from user, defaults to author
@@ -578,8 +578,8 @@ class Mod:
         """
         Move two or more users at a time to a voice channel
         Case sensitime Which means it has to be in the exact format Or if you have developer mode you can Use id's
-        Examples: *move AFK @ETLegacy @LOL / ~move channel id : 199292534671802369 user ids: 187570149207834624 203649661611802624 
-        this also works if you do one id and one text like *move 199292534671802369 @ETLegacy"""
+        Examples: *move AFK @ETLegacy @LOL / *move channel id : 315736072934129665 user ids: 153286414212005888 248032345603571712
+        this also works if you do one id and one text like *move 315736072934129665 @ETLegacy"""
 
         for user in users:
             await self.bot.move_member(user, channel)
@@ -622,7 +622,7 @@ class Mod:
                 await self.bot.say('A error occured. Please try again')
             else:
                 await self.bot.say(" :thumbsup: I am done moving Everyone in **{} to {}** :D".format(from_channel.name, to_channel.name))
-    @commands.command(no_pm=True, pass_context=True, aliases=["k"])
+    @commands.command(no_pm=True, pass_context=True)
     @checks.admin_or_permissions(kick_members=True)
     async def kick(self, ctx, user: discord.Member, *, reason: str=None):
         """Kicks user."""
@@ -647,7 +647,7 @@ class Mod:
         except Exception as e:
             print(e)
 
-    @commands.command(no_pm=True, pass_context=True, aliases=["b"])
+    @commands.command(no_pm=True, pass_context=True)
     @checks.admin_or_permissions(ban_members=True)
     async def ban(self, ctx, user: discord.Member, *, reason: str=None):
 	
@@ -779,9 +779,9 @@ class Mod:
                 return
         counter = 0
         while counter < number:
-            await self.bot.send_message(user, "***You got spamed punk (╯°□°）╯︵ ┻━┻!*** By **{} ¯\_(ツ)_/¯!**.".format(ctx.message.author))
+            await self.bot.send_message(user, "YOU GOT SPAMMED DUDE!!".format(ctx.message.author))
             counter = counter + 1
-        await self.bot.say("**Feeling foken sorry for {} they got spammed alright**".format(user.name))
+        await self.bot.say("RIP **{}**".format(user.name))
     @commands.command(pass_context=True)
     @checks.mod_or_permissions(manage_messages=True)
     @commands.cooldown(rate=1, per=5.0*60, type=commands.BucketType.server)
