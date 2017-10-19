@@ -5,6 +5,8 @@ from random import randint
 from random import choice as randchoice
 import time
 from __main__ import send_cmd_help
+from cogs.utils import checks
+import asyncio
 
 
 class Ping:
@@ -14,19 +16,22 @@ class Ping:
         self.bot = bot
 
 
-    @commands.command(pass_context=True, aliases=["pg"])
+    @commands.command(pass_context=True)
     async def ping(self,ctx):
         """time-ping time"""
         channel = ctx.message.channel
         colour = ''.join([randchoice('0123456789ABCDEF') for x in range(6)])
-        colour = int(colour, 16)        
+        colour = int(colour, 16)
         t1 = time.perf_counter()
         await self.bot.send_typing(channel)
         t2 = time.perf_counter()
+        pingtime = time.time()
+        await self.bot.say("Pinging Server...", delete_after=0.01)
+        ping = time.time() - pingtime
         em = discord.Embed(description="Pong: {}ms :ping_pong:".format(round((t2-t1)*1000)), colour=discord.Colour(value=colour))
+        em.set_footer(text="It took %.01f" % (ping) + " seconds to ping the server!")
 
         await self.bot.say(embed=em)
-
 
 def setup(bot):
     bot.add_cog(Ping(bot))
